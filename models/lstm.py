@@ -38,7 +38,9 @@ class LSTMModel(nn.Module):
         return output, (hidden, cell)
 
     def build_input(
-        self, input: torch.Tensor, context: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
+        self,
+        input: torch.Tensor,
+        context: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
     ) -> torch.Tensor:
         return self.embedding(input)
 

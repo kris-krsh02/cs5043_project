@@ -68,7 +68,7 @@ class PromptSummaryLSTMModel(LSTMModel):
             device,
         )
         self.prompt_dim: int = prompt_dim
-        self.historic_context_dim: int = historic_context_dim   
+        self.historic_context_dim: int = historic_context_dim
 
     def forward(
         self,
@@ -91,6 +91,10 @@ class PromptSummaryLSTMModel(LSTMModel):
 
         # Expand prompt_embedding to match the sequence length
         prompt_embedding = prompt_embedding.unsqueeze(1).expand(-1, seq_len, -1)
-        historic_context_embedding = historic_context_embedding.unsqueeze(1).expand(-1, seq_len, -1)
-        lstm_input = torch.cat((embedded_input, prompt_embedding, historic_context_embedding), dim=2)
+        historic_context_embedding = historic_context_embedding.unsqueeze(1).expand(
+            -1, seq_len, -1
+        )
+        lstm_input = torch.cat(
+            (embedded_input, prompt_embedding, historic_context_embedding), dim=2
+        )
         return lstm_input

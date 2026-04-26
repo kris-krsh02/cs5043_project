@@ -1,6 +1,6 @@
 from typing import Optional, List
 import datasets
-import torchnext
+import torchtext
 import torch
 
 
@@ -17,7 +17,7 @@ class DataProcessor:
         print(f"Loaded dataset: \n {self.dataset}")
 
     def preprocess_data(self) -> None:
-        tokenizer = torchnext.data.utils.get_tokenizer("basic_english")
+        tokenizer = torchtext.data.utils.get_tokenizer("basic_english")
 
         # Tokenize whole dataset
         for split in self.dataset.keys():
@@ -27,7 +27,7 @@ class DataProcessor:
                 )
 
     def prepare_vocabulary(self) -> None:
-        self.vocab = torchnext.vocab.build_vocab_from_iterator(
+        self.vocab = torchtext.vocab.build_vocab_from_iterator(
             self.tokenized_dataset["train"]["tokens"], min_freq=3
         )
         self.vocab.insert_token("<unk>", 0)
