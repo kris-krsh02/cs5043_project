@@ -101,6 +101,9 @@ class Trainer:
                     else:
                         context = None
                     output, state = self.model(input_seq, state, context)
+                    
+                    print(target_seq.min(), target_seq.max())
+                    print(self.criterion.ignore_index if hasattr(self.criterion, "ignore_index") else None)
 
                     loss = self.criterion(
                         output.reshape(-1, output.size(-1)), target_seq.reshape(-1)
@@ -109,6 +112,7 @@ class Trainer:
                     perplexity = torch.exp(loss)
                     
                     loss.backward()
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                     self.optimizer.step()
                     self.optimizer.zero_grad()
 

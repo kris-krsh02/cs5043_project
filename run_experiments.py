@@ -40,5 +40,5 @@ def run_experiment(model_name: str, config: ExperimentConfig = ExperimentConfig(
         data=train_data,
         vocab=vocab
     )
-    
+    print(f"Vocab size: {vocab_size}")
     trainer.train(has_context=(model_name != "base"), max_batches=max_batches)
