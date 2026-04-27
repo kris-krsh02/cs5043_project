@@ -65,7 +65,7 @@ class Trainer:
                     continue
                 
                 
-                if has_history:
+                if has_prompt:
                     context_builders: List[ContextBuilder] = [
                         ContextBuilder(
                             history_window_size=self.config.history_window_size,
