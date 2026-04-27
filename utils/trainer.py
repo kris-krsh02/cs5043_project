@@ -30,17 +30,26 @@ class Trainer:
         self.model.to(self.device)
         self.model.device = self.device
 
-    def train(self, has_context: bool, max_batches: int = None) -> None:
+    def train(self, has_prompt: bool, has_history: bool, max_batches: int = None) -> None:
         model_type = self.model.model_type
 
-        if model_type == "base" and has_context:
+        if model_type == "base" and (has_prompt or has_history):
             raise ValueError(
-                "Invalid config: base model cannot use context. Fix: call train(has_context=False) or switch model_type to 'prompt'/'prompt_summary'."
+                "Invalid config: base model cannot use context. Fix: call train(has_prompt=False, has_history=False) or switch model_type to 'prompt'/'prompt_summary'."
             )
 
-        if model_type in {"prompt", "prompt_summary"} and not has_context:
+        if model_type == "prompt" and has_prompt and has_history: 
             raise ValueError(
-                "Invalid config: prompt/context models require context. Fix: call train(has_context=True) or switch model_type to 'base'."
+                "Invalid config: prompt model cannot use history context. Fix: call train(has_prompt=True, has_history=False) or switch model_type to 'prompt_summary'."
+            )
+        elif model_type == "prompt" and not has_prompt:
+            raise ValueError(
+                "Invalid config: prompt model must use prompt context. Fix: call train(has_prompt=True, has_history=False) or switch model_type to 'base'."
+            )
+            
+        if model_type == "prompt_summary" and not (has_prompt and has_history):
+            raise ValueError(
+                "Invalid config: prompt_summary model must use both prompt and history context. Fix: call train(has_prompt=True, has_history=True) or switch model_type to 'base'/'prompt'."
             )
 
         self.model.train()            
@@ -56,7 +65,7 @@ class Trainer:
                     continue
                 
                 
-                if has_context:
+                if has_history:
                     context_builders: List[ContextBuilder] = [
                         ContextBuilder(
                             history_window_size=self.config.history_window_size,
@@ -80,18 +89,20 @@ class Trainer:
                     ):
                         continue
                     
-                    if has_context and t == 0:
+                    if has_prompt and t == 0:
                         for b in range(self.config.batch_size):
                             prompt_tokens = batch[b, : -1]
                             prompt_text = decode_tokens(prompt_tokens, self.vocab)
                             context_builders[b].build_prompt_embedding(prompt_text)
                 
-                    if has_context:
+                    if has_prompt:
                         prompt_batch = torch.stack(
                             [cb.get_prompt_embedding() for cb in context_builders]).to(self.device)
                         
-                        history_batch = torch.stack(
-                            [cb.get_historic_context_embedding() for cb in context_builders]).to(self.device)
+                        history_batch = None
+                        if has_history:
+                            history_batch = torch.stack(
+                                [cb.get_historic_context_embedding() for cb in context_builders]).to(self.device)
                     
                         context = (prompt_batch, history_batch)
                     else:
@@ -111,7 +122,7 @@ class Trainer:
                 
                     self.optimizer.step()
                 
-                    if has_context:
+                    if has_history:
                         predictions = get_predicted_tokens(output)
                         for b in range(self.config.batch_size):
                             text = decode_tokens(predictions[b], self.vocab)

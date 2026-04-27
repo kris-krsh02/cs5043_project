@@ -50,4 +50,4 @@ def run_experiment(model_name: str, config: ExperimentConfig = ExperimentConfig(
         shared_embedding_model=shared_embedding_model if model_name != "base" else None,
     )
     print(f"Vocab size: {vocab_size}")
-    trainer.train(has_context=(model_name != "base"), max_batches=max_batches)
+    trainer.train(has_prompt=(model_name == "prompt" or model_name == "prompt_summary"), has_history=(model_name == "prompt_summary"), max_batches=max_batches)
