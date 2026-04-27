@@ -2,6 +2,7 @@ from typing import List
 import math
 import torch
 import torch.nn as nn
+import random
 from sentence_transformers import SentenceTransformer
 from utils.decoder import decode_tokens, get_predicted_tokens
 from utils.logger import Logger
@@ -58,6 +59,9 @@ class Trainer:
         for epoch in range(self.config.num_epochs):
             total_loss = 0.0
             num_updates = 0
+            
+            random.shuffle(self.data)  # Shuffle data due to batch limit to ensure randomness
+            
             for i in range(0, len(self.data), self.config.batch_size):
                 if max_batches is not None and i // self.config.batch_size >= max_batches:
                     break
