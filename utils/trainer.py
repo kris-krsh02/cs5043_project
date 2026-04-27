@@ -47,7 +47,7 @@ class Trainer:
         if has_context:
             shared_embedding_model = SentenceTransformer(
                 "sentence-transformers/all-mpnet-base-v2",
-                device=self.config.device,
+                device=self.device,
             )
 
         for epoch in range(self.config.num_epochs):
@@ -63,7 +63,7 @@ class Trainer:
                     context_builders: List[ContextBuilder] = [
                         ContextBuilder(
                             history_window_size=self.config.history_window_size,
-                            device=self.config.device,
+                            device=self.device,
                             embedding_model=shared_embedding_model,
                         )
                         for _ in range(self.config.batch_size)

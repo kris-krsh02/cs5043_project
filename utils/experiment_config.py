@@ -13,4 +13,4 @@ class ExperimentConfig:
         self.learning_rate: float = 0.001
         self.history_window_size: int = 5
         self.num_epochs: int = 10
-        self.device: str = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device: torch.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")  
