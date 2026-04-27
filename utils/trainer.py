@@ -139,6 +139,6 @@ class Trainer:
 
             epoch_perplexity = math.exp(epoch_avg_loss) if math.isfinite(epoch_avg_loss) else float("nan")
             print('Total for epoch:')
-            self.logger.log_epoch(epoch, epoch_avg_loss, epoch_perplexity)
+            self.logger.log(epoch, epoch_avg_loss, epoch_perplexity)
 
         self.logger.save(f"{self.model.model_type}_training_log.json")
