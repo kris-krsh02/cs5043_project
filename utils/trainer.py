@@ -64,9 +64,10 @@ class Trainer:
                 if len(batch_seq) < self.config.batch_size:
                     continue
                 
+                context_builders: List[ContextBuilder] = []
                 
                 if has_prompt:
-                    context_builders: List[ContextBuilder] = [
+                    context_builders = [
                         ContextBuilder(
                             history_window_size=self.config.history_window_size,
                             device=self.device,
