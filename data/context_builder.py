@@ -19,10 +19,10 @@ class ContextBuilder:
         self.new_history: str = ""
         self.prompt_embedding: torch.Tensor = None
         self.historic_context: torch.Tensor = torch.zeros(
-            self.model.get_embedding_dimension(), device=self.device
+            self.model.get_sentence_embedding_dimension(), device=self.device
         )
         self.historic_context_embedding: torch.Tensor = torch.zeros(
-            self.model.get_embedding_dimension(), device=self.device
+            self.model.get_sentence_embedding_dimension(), device=self.device
         )
         self.time_step: int = 0
         self.history_window_size: int = history_window_size
@@ -54,7 +54,7 @@ class ContextBuilder:
 
     def get_prompt_embedding(self) -> torch.Tensor:
         if self.prompt_embedding is None:
-            return torch.zeros(self.model.get_embedding_dimension(), device=self.device)
+            return torch.zeros(self.model.get_sentence_embedding_dimension(), device=self.device)
         return self.prompt_embedding
 
     def get_historic_context_embedding(self) -> torch.Tensor:
@@ -62,10 +62,10 @@ class ContextBuilder:
 
     def reset_history(self) -> None:
         self.historic_context = torch.zeros(
-            self.model.get_embedding_dimension(), device=self.device
+            self.model.get_sentence_embedding_dimension(), device=self.device
         )
         self.historic_context_embedding = torch.zeros(
-            self.model.get_embedding_dimension(), device=self.device
+            self.model.get_sentence_embedding_dimension(), device=self.device
         )
         self.prompt_embedding = None
         self.new_history = ""
