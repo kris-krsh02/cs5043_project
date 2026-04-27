@@ -23,7 +23,7 @@ def run_experiment(model_name: str, config: ExperimentConfig = ExperimentConfig(
                 "sentence-transformers/all-mpnet-base-v2",
                 device=config.device,
             )
-    prompt_history_dim = shared_embedding_model.get_embedding_dimension()
+    prompt_history_dim = shared_embedding_model.get_sentence_embedding_dimension()
     
     # Initialize model
     if model_name == "base":
