@@ -51,13 +51,15 @@ class Trainer:
             )
 
         for epoch in range(self.config.num_epochs):
+            
             for i in range(0, len(self.data), self.config.batch_size):
                 if max_batches is not None and i // self.config.batch_size >= max_batches:
                     break
-                batch = self.data[i : i + self.config.batch_size].to(self.device)
-
-                if batch.size(0) != self.config.batch_size:
+                
+                batch = self.data[i : i + self.config.batch_size]
+                if len(batch) < self.config.batch_size:
                     continue
+                
                 
                 if has_context:
                     context_builders: List[ContextBuilder] = [
@@ -68,28 +70,27 @@ class Trainer:
                         )
                         for _ in range(self.config.batch_size)
                     ]
-
-                total_seq_len = batch.size(1)
+                        
                 state = self.model.init_state(self.config.batch_size)
+                num_steps = min(len(text) for text in batch)
                 
-                if has_context:
-                    for b in range(self.config.batch_size):
-                        prompt_tokens = batch[b, : self.config.sequence_length]
-                        prompt_text = decode_tokens(prompt_tokens, self.vocab)
-                        context_builders[b].build_prompt_embedding(prompt_text)
+                for t in range(num_steps):
+                    batch = torch.stack([text[t:] for text in batch]).to(self.device)
+                    input_seq = batch[:, :-1]
+                    target_seq = batch[:, 1:]
 
-                for j in range(0, total_seq_len - 1, self.config.sequence_length):
-                    input_seq = batch[:, j : j + self.config.sequence_length]
-                    target_seq = batch[:, j + 1 : j + self.config.sequence_length + 1]
-                    
                     if (
                         input_seq.size(1) != self.config.sequence_length
                         or target_seq.size(1) != self.config.sequence_length
                     ):
                         continue
                     
-                    state = self.model.detach_state(state)
-                    
+                    if has_context and t == 0:
+                        for b in range(self.config.batch_size):
+                            prompt_tokens = batch[b, : -1]
+                            prompt_text = decode_tokens(prompt_tokens, self.vocab)
+                            context_builders[b].build_prompt_embedding(prompt_text)
+                
                     if has_context:
                         prompt_batch = torch.stack(
                             [cb.get_prompt_embedding() for cb in context_builders]).to(self.device)
@@ -100,22 +101,21 @@ class Trainer:
                         context = (prompt_batch, history_batch)
                     else:
                         context = None
-                    output, state = self.model(input_seq, state, context)
                     
-                    print(target_seq.min(), target_seq.max())
-                    print(self.criterion.ignore_index if hasattr(self.criterion, "ignore_index") else None)
+                    state = self.model.detach_state(state)
+                    output, state = self.model(input_seq, state, context)
 
                     loss = self.criterion(
                         output.reshape(-1, output.size(-1)), target_seq.reshape(-1)
                     )
-                    
                     perplexity = torch.exp(loss)
-                    
+
+                    self.optimizer.zero_grad()
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+                
                     self.optimizer.step()
-                    self.optimizer.zero_grad()
-
+                
                     if has_context:
                         predictions = get_predicted_tokens(output)
                         for b in range(self.config.batch_size):

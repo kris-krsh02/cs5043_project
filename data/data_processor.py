@@ -27,31 +27,35 @@ class DataProcessor:
             )
 
     def prepare_vocabulary(self) -> None:
+        specials = ["<pad>", "<unk>", "<eos>"]
+
         self.vocab = torchtext.vocab.build_vocab_from_iterator(
-            self.tokenized_dataset["train"]["tokens"], min_freq=3
+            self.tokenized_dataset["train"]["tokens"],
+            min_freq=3,
+            specials=specials,
+            special_first=True,
         )
-        self.vocab.insert_token("<pad>", 0)
-        self.vocab.insert_token("<unk>", 1)
-        self.vocab.insert_token("<eos>", 2)
         self.vocab.set_default_index(self.vocab["<unk>"])
 
         print(f"Vocabulary size: {len(self.vocab)}")
         print(f"Sample tokens: {self.vocab.get_itos()[:10]}")
 
-    def get_data(self, split: str) -> torch.Tensor:
-        data: List[List[int]] = []
+    def get_data(self, split: str, sequence_length: int) -> torch.Tensor:
+        data: List[List[torch.Tensor]] = []
+        
         for entry in self.tokenized_dataset[split]:
             tokens = entry["tokens"] + ["<eos>"]
             tokens = [self.vocab[token] for token in tokens]
-            data.append(tokens)
+            
+            sequences = []
+            for i in range(0, len(tokens) - sequence_length):
+                seq = tokens[i : i + sequence_length + 1]
+                sequences.append(torch.tensor(seq, dtype=torch.long))
 
-        data_tensor = pad_sequence(
-            [torch.tensor(tokens, dtype=torch.long) for tokens in data],
-            batch_first=True,
-            padding_value=self.vocab["<pad>"],
-        )
+            if len(sequences) > 0:
+                data.append(sequences)
+        return data
         
-        return data_tensor
     
     def get_vocab(self) -> Optional[object]:
         return self.vocab
