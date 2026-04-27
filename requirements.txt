@@ -1,4 +1,4 @@
 datasets==4.8.4
 sentence_transformers==5.4.1
-torch==2.11.0
+torch==2.3.0
 torchtext==0.18.0
