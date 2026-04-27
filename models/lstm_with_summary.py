@@ -1,6 +1,7 @@
 from typing import Optional, Tuple
 from models.lstm import LSTMModel
 import torch
+import torch.nn as nn
 
 
 class PromptLSTMModel(LSTMModel):
@@ -16,7 +17,7 @@ class PromptLSTMModel(LSTMModel):
     ) -> None:
         super(PromptLSTMModel, self).__init__(
             vocab_size,
-            embedding_dim + prompt_dim,
+            embedding_dim,
             hidden_dim,
             num_layers,
             dropout,
@@ -24,6 +25,13 @@ class PromptLSTMModel(LSTMModel):
         )
         self.model_type = "prompt"
         self.prompt_dim: int = prompt_dim
+        self.lstm = nn.LSTM(
+            embedding_dim + prompt_dim,
+            hidden_dim,
+            num_layers,
+            batch_first=True,
+            dropout=dropout,
+        )
 
     def forward(
         self,
@@ -62,7 +70,7 @@ class PromptSummaryLSTMModel(LSTMModel):
     ) -> None:
         super(PromptSummaryLSTMModel, self).__init__(
             vocab_size,
-            embedding_dim + prompt_dim + historic_context_dim,
+            embedding_dim,
             hidden_dim,
             num_layers,
             dropout,
@@ -71,6 +79,13 @@ class PromptSummaryLSTMModel(LSTMModel):
         self.model_type = "prompt_summary"
         self.prompt_dim: int = prompt_dim
         self.historic_context_dim: int = historic_context_dim
+        self.lstm = nn.LSTM(
+            embedding_dim + prompt_dim + historic_context_dim,
+            hidden_dim,
+            num_layers,
+            batch_first=True,
+            dropout=dropout,
+        )
 
     def forward(
         self,
