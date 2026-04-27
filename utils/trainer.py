@@ -16,6 +16,7 @@ class Trainer:
         config,
         data: torch.Tensor,
         vocab: object,
+        shared_embedding_model: SentenceTransformer = None,
     ) -> None:
         self.model = model
         self.optimizer = optimizer
@@ -25,6 +26,7 @@ class Trainer:
         self.data = data
         self.vocab = vocab
         self.device = torch.device(self.config.device)
+        self.shared_embedding_model = shared_embedding_model
         self.model.to(self.device)
         self.model.device = self.device
 
@@ -41,14 +43,7 @@ class Trainer:
                 "Invalid config: prompt/context models require context. Fix: call train(has_context=True) or switch model_type to 'base'."
             )
 
-        self.model.train()
-
-        shared_embedding_model = None
-        if has_context:
-            shared_embedding_model = SentenceTransformer(
-                "sentence-transformers/all-mpnet-base-v2",
-                device=self.device,
-            )
+        self.model.train()            
 
         for epoch in range(self.config.num_epochs):
             
@@ -66,7 +61,7 @@ class Trainer:
                         ContextBuilder(
                             history_window_size=self.config.history_window_size,
                             device=self.device,
-                            embedding_model=shared_embedding_model,
+                            embedding_model=self.shared_embedding_model,
                         )
                         for _ in range(self.config.batch_size)
                     ]
