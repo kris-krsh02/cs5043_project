@@ -81,6 +81,13 @@ class Trainer:
                 for j in range(0, total_seq_len - 1, self.config.sequence_length):
                     input_seq = batch[:, j : j + self.config.sequence_length]
                     target_seq = batch[:, j + 1 : j + self.config.sequence_length + 1]
+                    
+                    if (
+                        input_seq.size(1) != self.config.sequence_length
+                        or target_seq.size(1) != self.config.sequence_length
+                    ):
+                        continue
+                    
                     state = self.model.detach_state(state)
                     
                     if has_context:
