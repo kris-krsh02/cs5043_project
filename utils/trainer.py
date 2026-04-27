@@ -1,4 +1,5 @@
 from typing import List
+import math
 import torch
 import torch.nn as nn
 from sentence_transformers import SentenceTransformer
@@ -55,7 +56,8 @@ class Trainer:
         self.model.train()            
 
         for epoch in range(self.config.num_epochs):
-            
+            total_loss = 0.0
+            num_updates = 0
             for i in range(0, len(self.data), self.config.batch_size):
                 if max_batches is not None and i // self.config.batch_size >= max_batches:
                     break
@@ -116,6 +118,8 @@ class Trainer:
                         output.reshape(-1, output.size(-1)), target_seq.reshape(-1)
                     )
                     perplexity = torch.exp(loss)
+                    total_loss += loss.item()
+                    num_updates += 1
 
                     self.optimizer.zero_grad()
                     loss.backward()
@@ -130,5 +134,11 @@ class Trainer:
                             context_builders[b].update_historic_context(text)
 
                     self.logger.log(epoch, loss.item(), perplexity.item())
+
+            epoch_avg_loss = total_loss / num_updates if num_updates > 0 else float("nan")
+
+            epoch_perplexity = math.exp(epoch_avg_loss) if math.isfinite(epoch_avg_loss) else float("nan")
+            print('Total for epoch:')
+            self.logger.log_epoch(epoch, epoch_avg_loss, epoch_perplexity)
 
         self.logger.save(f"{self.model.model_type}_training_log.json")
