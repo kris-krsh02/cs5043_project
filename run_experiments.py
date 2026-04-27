@@ -14,7 +14,7 @@ def run_experiment(model_name: str, config: ExperimentConfig = ExperimentConfig(
     data_processor.preprocess_data()
     data_processor.prepare_vocabulary()
     vocab = data_processor.get_vocab()
-    train_data = data_processor.get_data("train")
+    train_data = data_processor.get_data("train", config.sequence_length)
     vocab_size = data_processor.get_vocab_size()
     
     # Initialize model
