@@ -56,8 +56,8 @@ class Trainer:
                 if max_batches is not None and i // self.config.batch_size >= max_batches:
                     break
                 
-                batch = self.data[i : i + self.config.batch_size]
-                if len(batch) < self.config.batch_size:
+                batch_seq = self.data[i : i + self.config.batch_size]
+                if len(batch_seq) < self.config.batch_size:
                     continue
                 
                 
@@ -72,10 +72,10 @@ class Trainer:
                     ]
                         
                 state = self.model.init_state(self.config.batch_size)
-                num_steps = min(len(text) for text in batch)
+                num_steps = min(len(text) for text in batch_seq)
                 
                 for t in range(num_steps):
-                    batch = torch.stack([text[t] for text in batch]).to(self.device)
+                    batch = torch.stack([text[t] for text in batch_seq]).to(self.device)
                     input_seq = batch[:, :-1]
                     target_seq = batch[:, 1:]
 
