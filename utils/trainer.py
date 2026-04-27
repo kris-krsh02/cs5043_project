@@ -75,7 +75,7 @@ class Trainer:
                 num_steps = min(len(text) for text in batch)
                 
                 for t in range(num_steps):
-                    batch = torch.stack([text[t:] for text in batch]).to(self.device)
+                    batch = torch.stack([text[t] for text in batch]).to(self.device)
                     input_seq = batch[:, :-1]
                     target_seq = batch[:, 1:]
 
