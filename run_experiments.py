@@ -5,11 +5,14 @@ from data.data_processor import DataProcessor
 from models.lstm import LSTMModel
 from models.lstm_with_summary import PromptLSTMModel, PromptSummaryLSTMModel
 from utils.trainer import Trainer
+from utils.seed import set_seed
 import torch
 import torch.nn as nn
 
 
 def run_experiment(model_name: str, config: ExperimentConfig = ExperimentConfig(), max_batches: int = None) -> None:
+    set_seed(42)
+    
     # Load data
     data_processor = DataProcessor(config.dataset_name, config.dataset_specification)
     data_processor.load_data()
@@ -51,3 +54,4 @@ def run_experiment(model_name: str, config: ExperimentConfig = ExperimentConfig(
     )
     print(f"Vocab size: {vocab_size}")
     trainer.train(has_prompt=(model_name == "prompt" or model_name == "prompt_summary"), has_history=(model_name == "prompt_summary"), max_batches=max_batches)
+    torch.save(model.state_dict(), f"{model_name}_model.pth")
