@@ -9,7 +9,7 @@ import torch.nn as nn
 
 def run_experiment(model_name: str, config: ExperimentConfig = ExperimentConfig(), max_batches: int = None) -> None:
     # Load data
-    data_processor = DataProcessor(config.dataset_name, config.data_specification)
+    data_processor = DataProcessor(config.dataset_name, config.dataset_specification)
     data_processor.load_data()
     data_processor.preprocess_data()
     data_processor.prepare_vocabulary()
