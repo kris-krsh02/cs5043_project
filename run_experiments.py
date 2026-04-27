@@ -19,11 +19,11 @@ def run_experiment(model_name: str, config: ExperimentConfig = ExperimentConfig(
     
     # Initialize model
     if model_name == "base":
-        model = LSTMModel(vocab_size, config.embedding_dim, config.hidden_dim)
+        model = LSTMModel(vocab_size, config.embedding_dim, config.hidden_dim, config.num_layers, config.dropout, device=config.device)
     elif model_name == "prompt":
-        model = PromptLSTMModel(vocab_size, config.embedding_dim, config.hidden_dim)
+        model = PromptLSTMModel(vocab_size, config.embedding_dim, config.hidden_dim, config.num_layers, config.dropout, device=config.device)
     elif model_name == "prompt_summary":
-        model = PromptSummaryLSTMModel(vocab_size, config.embedding_dim, config.hidden_dim)
+        model = PromptSummaryLSTMModel(vocab_size, config.embedding_dim, config.hidden_dim, config.num_layers, config.dropout, device=config.device)
     else:
         raise ValueError(f"Unknown model name: {model_name}. Valid options are 'base', 'prompt', 'prompt_summary'.")
 
