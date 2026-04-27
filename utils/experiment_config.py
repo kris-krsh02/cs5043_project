@@ -11,6 +11,6 @@ class ExperimentConfig:
         self.sequence_length: int = 32
         self.dropout: float = 0.5
         self.learning_rate: float = 0.001
-        self.context_window_size: int = 10
+        self.history_window_size: int = 5
         self.num_epochs: int = 10
         self.device: str = "cuda" if torch.cuda.is_available() else "cpu"

@@ -16,6 +16,7 @@ class LSTMModel(nn.Module):
         super(LSTMModel, self).__init__()
         self.num_layers = num_layers
         self.device = device
+        self.model_type = "base"
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(
             embedding_dim, hidden_dim, num_layers, batch_first=True, dropout=dropout

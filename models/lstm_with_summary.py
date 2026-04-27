@@ -1,5 +1,5 @@
 from typing import Optional, Tuple
-from .lstm import LSTMModel
+from models.lstm import LSTMModel
 import torch
 
 
@@ -22,6 +22,7 @@ class PromptLSTMModel(LSTMModel):
             dropout,
             device,
         )
+        self.model_type = "prompt"
         self.prompt_dim: int = prompt_dim
 
     def forward(
@@ -67,6 +68,7 @@ class PromptSummaryLSTMModel(LSTMModel):
             dropout,
             device,
         )
+        self.model_type = "prompt_summary"
         self.prompt_dim: int = prompt_dim
         self.historic_context_dim: int = historic_context_dim
 
