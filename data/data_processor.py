@@ -55,6 +55,11 @@ class DataProcessor:
     
     def get_vocab(self) -> Optional[object]:
         return self.vocab
+    
+    def get_vocab_size(self) -> int:
+        if self.vocab is None:
+            raise ValueError("Vocabulary not prepared yet. Call prepare_vocabulary() first.")
+        return len(self.vocab)
 
     def get_pad_idx(self) -> int:
         return self.vocab["<pad>"]

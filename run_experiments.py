@@ -15,14 +15,15 @@ def run_experiment(model_name: str, config: ExperimentConfig = ExperimentConfig(
     data_processor.prepare_vocabulary()
     vocab = data_processor.get_vocab()
     train_data = data_processor.get_data("train")
+    vocab_size = data_processor.get_vocab_size()
     
     # Initialize model
     if model_name == "base":
-        model = LSTMModel(config.vocab_size, config.embedding_dim, config.hidden_dim)
+        model = LSTMModel(vocab_size, config.embedding_dim, config.hidden_dim)
     elif model_name == "prompt":
-        model = PromptLSTMModel(config.vocab_size, config.embedding_dim, config.hidden_dim)
+        model = PromptLSTMModel(vocab_size, config.embedding_dim, config.hidden_dim)
     elif model_name == "prompt_summary":
-        model = PromptSummaryLSTMModel(config.vocab_size, config.embedding_dim, config.hidden_dim)
+        model = PromptSummaryLSTMModel(vocab_size, config.embedding_dim, config.hidden_dim)
     else:
         raise ValueError(f"Unknown model name: {model_name}. Valid options are 'base', 'prompt', 'prompt_summary'.")
 
