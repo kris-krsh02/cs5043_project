@@ -18,7 +18,7 @@ def run_evaluation(model_name: str, config: ExperimentConfig = ExperimentConfig(
     data_processor.preprocess_data()
     data_processor.prepare_vocabulary()
     vocab = data_processor.get_vocab()
-    train_data = data_processor.get_data("train", config.sequence_length)
+    test_data = data_processor.get_data("test", config.sequence_length)
     vocab_size = data_processor.get_vocab_size()
     
     shared_embedding_model = SentenceTransformer(
@@ -30,17 +30,17 @@ def run_evaluation(model_name: str, config: ExperimentConfig = ExperimentConfig(
     # Initialize model
     if model_name == "base":
         model = LSTMModel(vocab_size, config.embedding_dim, config.hidden_dim, config.num_layers, config.dropout, device=config.device)
-        checkpoint = torch.load(f"{model_name}_model.pth", map_location=config.device)
+        checkpoint = torch.load(f"checkpoints/{model_name}_model.pth", map_location=config.device)
         model.load_state_dict(checkpoint)
         model.to(config.device)
     elif model_name == "prompt":
         model = PromptLSTMModel(vocab_size, config.embedding_dim, prompt_history_dim, config.hidden_dim, config.num_layers, config.dropout, device=config.device)
-        checkpoint = torch.load(f"{model_name}_model.pth", map_location=config.device)
+        checkpoint = torch.load(f"checkpoints/{model_name}_model.pth", map_location=config.device)
         model.load_state_dict(checkpoint)
         model.to(config.device)
     elif model_name == "prompt_summary":
         model = PromptSummaryLSTMModel(vocab_size, config.embedding_dim, prompt_history_dim, prompt_history_dim, config.hidden_dim, config.num_layers, config.dropout, device=config.device)
-        checkpoint = torch.load(f"{model_name}_model.pth", map_location=config.device)
+        checkpoint = torch.load(f"checkpoints/{model_name}_model.pth", map_location=config.device)
         model.load_state_dict(checkpoint)
         model.to(config.device)
     else:
@@ -54,7 +54,7 @@ def run_evaluation(model_name: str, config: ExperimentConfig = ExperimentConfig(
         model=model,
         criterion=criterion,
         config=config,
-        data=train_data,
+        data=test_data,
         vocab=vocab,
         shared_embedding_model=shared_embedding_model if model_name != "base" else None,
     )

@@ -12,6 +12,7 @@ class DataProcessor:
         self.dataset: datasets.DatasetDict = None
         self.tokenized_dataset: datasets.DatasetDict = datasets.DatasetDict()
         self.vocab: Optional[object] = None
+        self.tokenizer = None
 
     def load_data(self) -> None:
         self.dataset = datasets.load_dataset(self.dataset_name, self.data_specification)
@@ -19,7 +20,8 @@ class DataProcessor:
 
     def preprocess_data(self) -> None:
         tokenizer = torchtext.data.utils.get_tokenizer("basic_english")
-
+        self.tokenizer = tokenizer
+        
         # Tokenize whole dataset
         for split in self.dataset.keys():
             self.tokenized_dataset[split] = self.dataset[split].map(

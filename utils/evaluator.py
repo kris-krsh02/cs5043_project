@@ -129,7 +129,7 @@ class Evaluator:
                             text = decode_tokens(predictions[b], self.vocab)
                             context_builders[b].update_historic_context(text)
                     
-                    self.logger.log(i // self.config.batch_size, loss.item(), perplexity.item())
+                    self.logger.log(i // self.config.batch_size + 1, loss.item(), perplexity.item())
 
             avg_loss = total_loss / total_tokens if total_tokens > 0 else float("nan")
 
@@ -137,4 +137,22 @@ class Evaluator:
             self.logger.log(model_types.index(self.model.model_type), avg_loss, perplexity)
             print(f"Evaluation complete for {self.model.model_type}. Average Loss: {avg_loss:.4f}, Perplexity: {perplexity:.4f}")
 
-        self.logger.save("evaluation_log.json")
+        self.logger.save(f"logs/{self.model.model_type}_evaluation_log.json")
+
+
+def distinct_n(text: str, n: int) -> float:
+    "Calculates the proportion of unique n-grams in the given text."
+    tokens = text.split()
+    total_ngrams = [tuple(tokens[i : i + n]) for i in range(len(tokens) - n + 1)]
+    distinct_ngrams = set(total_ngrams)
+    return len(distinct_ngrams) / len(total_ngrams) if total_ngrams else 0.0
+
+def ngram_repetition_rate(text: str, n: int) -> float:
+    "Calculates the repetition rate of n-grams in the given text."
+    tokens = text.split()
+    total_ngrams = [tuple(tokens[i : i + n]) for i in range(len(tokens) - n + 1)]
+    ngram_counts = {}
+    for ngram in total_ngrams:
+        ngram_counts[ngram] = ngram_counts.get(ngram, 0) + 1
+    repeated_ngrams = sum(count - 1 for count in ngram_counts.values() if count > 1)
+    return repeated_ngrams / len(total_ngrams) if total_ngrams else 0.0
