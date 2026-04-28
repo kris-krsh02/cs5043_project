@@ -6,6 +6,7 @@ from models.lstm_with_summary import PromptLSTMModel, PromptSummaryLSTMModel
 from utils.evaluator import Evaluator
 from utils.seed import set_seed
 import torch.nn as nn
+import torch
 
 
 def run_evaluation(model_name: str, config: ExperimentConfig = ExperimentConfig(), max_batches: int = None) -> None:
@@ -29,10 +30,19 @@ def run_evaluation(model_name: str, config: ExperimentConfig = ExperimentConfig(
     # Initialize model
     if model_name == "base":
         model = LSTMModel(vocab_size, config.embedding_dim, config.hidden_dim, config.num_layers, config.dropout, device=config.device)
+        checkpoint = torch.load(f"{model_name}_model.pth", map_location=config.device)
+        model.load_state_dict(checkpoint)
+        model.to(config.device)
     elif model_name == "prompt":
         model = PromptLSTMModel(vocab_size, config.embedding_dim, prompt_history_dim, config.hidden_dim, config.num_layers, config.dropout, device=config.device)
+        checkpoint = torch.load(f"{model_name}_model.pth", map_location=config.device)
+        model.load_state_dict(checkpoint)
+        model.to(config.device)
     elif model_name == "prompt_summary":
         model = PromptSummaryLSTMModel(vocab_size, config.embedding_dim, prompt_history_dim, prompt_history_dim, config.hidden_dim, config.num_layers, config.dropout, device=config.device)
+        checkpoint = torch.load(f"{model_name}_model.pth", map_location=config.device)
+        model.load_state_dict(checkpoint)
+        model.to(config.device)
     else:
         raise ValueError(f"Unknown model name: {model_name}. Valid options are 'base', 'prompt', 'prompt_summary'.")
 
