@@ -21,10 +21,10 @@ class DataProcessor:
         tokenizer = torchtext.data.utils.get_tokenizer("basic_english")
         self.tokenizer = tokenizer
         
-        # Tokenize whole dataset
+        # Tokenize whole dataset skipping very short rows
         for split in self.dataset.keys():
             self.tokenized_dataset[split] = self.dataset[split].map(
-                lambda x: {"tokens": tokenizer(x["text"])}
+                lambda x: {"tokens": tokenizer(x["text"]) if len(x["text"]) > 50 else None}
             )
 
     def prepare_vocabulary(self) -> None:
@@ -43,11 +43,14 @@ class DataProcessor:
 
     def get_data(self, split: str, sequence_length: int) -> torch.Tensor:
         data: List[List[torch.Tensor]] = []
+        print(f"Length of {split} dataset: {len(self.tokenized_dataset[split])}")
         
         for entry in self.tokenized_dataset[split]:
+            if entry["tokens"] is None:
+                continue
             tokens = entry["tokens"] + ["<eos>"]
             tokens = [self.vocab[token] for token in tokens]
-            
+
             sequences = []
             for i in range(0, len(tokens), sequence_length):
                 seq = tokens[i : i + sequence_length + 1]

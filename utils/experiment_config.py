@@ -8,9 +8,9 @@ class ExperimentConfig:
         self.embedding_dim: int = 128
         self.hidden_dim: int = 256
         self.num_layers: int = 2
-        self.sequence_length: int = 32
+        self.sequence_length: int = 16
         self.dropout: float = 0.5
         self.learning_rate: float = 0.0001
-        self.history_window_size: int = 5
-        self.num_epochs: int = 30
+        self.history_window_size: int = 4
+        self.num_epochs: int = 90
         self.device: torch.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")  
