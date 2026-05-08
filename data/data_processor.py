@@ -50,8 +50,13 @@ class DataProcessor:
             tokens = [self.vocab[token] for token in tokens]
             
             sequences = []
-            for i in range(0, len(tokens) - sequence_length):
+            for i in range(0, len(tokens), sequence_length):
                 seq = tokens[i : i + sequence_length + 1]
+                
+                if len(seq) < sequence_length + 1:
+                    pad = [self.vocab["<pad>"]] * (sequence_length + 1 - len(seq))
+                    seq += pad
+                
                 sequences.append(torch.tensor(seq, dtype=torch.long))
 
             if len(sequences) > 0:
