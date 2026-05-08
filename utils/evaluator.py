@@ -80,59 +80,75 @@ class Evaluator:
                     ]
                         
                 state = self.model.init_state(self.config.batch_size)
-                num_steps = min(len(text) for text in batch_seq)
-                
-                for t in range(num_steps):
-                    batch = torch.stack([text[t] for text in batch_seq]).to(self.device)
-                    input_seq = batch[:, :-1]
-                    target_seq = batch[:, 1:]
+                num_steps = max(len(text) for text in batch_seq)
 
-                    if (
-                        input_seq.size(1) != self.config.sequence_length
-                        or target_seq.size(1) != self.config.sequence_length
-                    ):
-                        continue
-                    
-                    if has_prompt and t == 0:
-                        for b in range(self.config.batch_size):
-                            prompt_tokens = batch[b, : -1]
-                            prompt_text = decode_tokens(prompt_tokens, self.vocab)
-                            context_builders[b].build_prompt_embedding(prompt_text)
-                
+                # If using prompts, build them once from the first sequence of each document
+                if has_prompt:
+                    for b in range(self.config.batch_size):
+                        prompt = decode_tokens(batch_seq[b][0][:-1], self.vocab)
+                        context_builders[b].build_prompt_embedding(prompt)
+                        
+                history_buffers = [[] for _ in range(self.config.batch_size)]
+
+                for t in range(num_steps):
+                    inputs, targets = [], []
+                    for doc in batch_seq:
+                        if t < len(doc):
+                            inputs.append(doc[t][:-1])
+                            targets.append(doc[t][1:])
+                        else:
+                            inputs.append(
+                                torch.full((self.config.sequence_length,), self.vocab["<pad>"], dtype=torch.long)
+                            )
+                            targets.append(
+                                torch.full((self.config.sequence_length,), self.vocab["<pad>"], dtype=torch.long)
+                            )
+
+                    input_seq = torch.stack(inputs).to(self.device)
+                    target_seq = torch.stack(targets).to(self.device)
+
                     if has_prompt:
                         prompt_batch = torch.stack(
-                            [cb.get_prompt_embedding() for cb in context_builders]).to(self.device)
-                        
+                            [cb.get_prompt_embedding() for cb in context_builders]
+                        ).to(self.device)
+
                         history_batch = None
                         if has_history:
                             history_batch = torch.stack(
-                                [cb.get_historic_context_embedding() for cb in context_builders]).to(self.device)
-                    
+                                [cb.get_historic_context_embedding() for cb in context_builders]
+                            ).to(self.device)
+
                         context = (prompt_batch, history_batch)
                     else:
                         context = None
-                    
+
                     state = self.model.detach_state(state)
                     output, state = self.model(input_seq, state, context)
-                    
-                    num_tokens = target_seq.numel()
+
                     loss = self.criterion(
                         output.reshape(-1, output.size(-1)), target_seq.reshape(-1)
                     )
-                    total_loss += loss.item() * num_tokens
-                    total_tokens += num_tokens
                     perplexity = torch.exp(loss)
-                
+
+                    pad_idx = self.vocab["<pad>"]
+                    num_valid_tokens = (target_seq.reshape(-1) != pad_idx).sum().item()
+
+                    total_loss += loss.item() * num_valid_tokens
+                    total_tokens += num_valid_tokens
+
+                    # Update history from predictions, matching Generator's token-by-token accumulation
                     if has_history:
                         predictions = get_predicted_tokens(output)
                         for b in range(self.config.batch_size):
-                            text = decode_tokens(predictions[b], self.vocab)
-                            context_builders[b].update_historic_context(text)
-                    
-                    self.logger.log(i // self.config.batch_size + 1, loss.item(), perplexity.item())
+                            next_token = predictions[b, -1]
+                            history_buffers[b].append(next_token)
 
+                            if len(history_buffers[b]) == self.config.sequence_length:
+                                text = decode_tokens(history_buffers[b], self.vocab)
+                                context_builders[b].update_historic_context(text)
+                                history_buffers[b] = []
+    
             avg_loss = total_loss / total_tokens if total_tokens > 0 else float("nan")
-
             perplexity = math.exp(avg_loss) if math.isfinite(avg_loss) else float("nan")
             self.logger.log(model_types.index(self.model.model_type), avg_loss, perplexity)
             print(f"Evaluation complete for {self.model.model_type}. Average Loss: {avg_loss:.4f}, Perplexity: {perplexity:.4f}")

@@ -58,7 +58,7 @@ class Trainer:
 
         for epoch in range(self.config.num_epochs):
             total_loss = 0.0
-            num_updates = 0
+            total_tokens = 0
             
             random.seed(epoch + 42)  # Ensure different shuffling each epoch
             random.shuffle(self.data)  # Shuffle data due to batch limit to ensure randomness
@@ -125,9 +125,15 @@ class Trainer:
                     loss = self.criterion(
                         output.reshape(-1, output.size(-1)), target_seq.reshape(-1)
                     )
-                    perplexity = torch.exp(loss)
-                    total_loss += loss.item()
-                    num_updates += 1
+
+                    # Compute number of valid (non-pad) tokens in this step
+                    pad_idx = self.vocab["<pad>"]
+                    num_valid_tokens = (target_seq.reshape(-1) != pad_idx).sum().item()
+
+                    # loss is mean over non-ignored tokens (CrossEntropyLoss with ignore_index),
+                    # so multiply by num_valid_tokens to get token-sum, then accumulate
+                    total_loss += loss.item() * num_valid_tokens
+                    total_tokens += num_valid_tokens
 
                     self.optimizer.zero_grad()
                     loss.backward()
@@ -140,9 +146,9 @@ class Trainer:
                             text = decode_tokens(target_seq[b], self.vocab)
                             context_builders[b].update_historic_context(text)
 
-            epoch_avg_loss = total_loss / num_updates if num_updates > 0 else float("nan")
+            epoch_avg_loss = total_loss / total_tokens if total_tokens > 0 else float("nan")
             epoch_perplexity = math.exp(epoch_avg_loss) if math.isfinite(epoch_avg_loss) else float("nan")
-            
+
             self.logger.log(epoch, epoch_avg_loss, epoch_perplexity)
 
         self.logger.save(f"{self.model.model_type}_training_log.json")
