@@ -140,12 +140,9 @@ class Trainer:
                             text = decode_tokens(target_seq[b], self.vocab)
                             context_builders[b].update_historic_context(text)
 
-                    self.logger.log(epoch, loss.item(), perplexity.item())
-
             epoch_avg_loss = total_loss / num_updates if num_updates > 0 else float("nan")
             epoch_perplexity = math.exp(epoch_avg_loss) if math.isfinite(epoch_avg_loss) else float("nan")
             
-            print('Total for epoch:')
             self.logger.log(epoch, epoch_avg_loss, epoch_perplexity)
 
         self.logger.save(f"{self.model.model_type}_training_log.json")
