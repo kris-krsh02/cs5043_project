@@ -71,8 +71,8 @@ class Trainer:
                 if len(batch_docs) < self.config.batch_size:
                     continue
                 
-                context_builders: List[ContextBuilder] = []                        
-                
+                context_builders: List[ContextBuilder] = []
+
                 if has_prompt:
                     context_builders = [
                         ContextBuilder(
@@ -84,9 +84,9 @@ class Trainer:
                     ]
                     
                     # Build prompts in the beginning
-                    for i in range(self.config.batch_size):
-                        prompt = decode_tokens(batch_docs[i][0][:-1], self.vocab) # Use first sequence of each doc as prompt
-                        context_builders[i].build_prompt_embedding(prompt)
+                    for b in range(self.config.batch_size):
+                        prompt = decode_tokens(batch_docs[b][0][:-1], self.vocab) # Use first sequence of each doc as prompt
+                        context_builders[b].build_prompt_embedding(prompt)
                         
                 state = self.model.init_state(self.config.batch_size)
                 num_steps = max(len(text) for text in batch_docs) # based on longest article
@@ -121,6 +121,14 @@ class Trainer:
                     
                     state = self.model.detach_state(state)
                     output, state = self.model(input_seq, state, context)
+
+
+                    # Compute number of valid (non-pad) tokens in this step and skip if none
+                    pad_idx = self.vocab["<pad>"]
+                    num_valid_tokens = (target_seq.reshape(-1) != pad_idx).sum().item()
+                    if num_valid_tokens == 0:
+                        # nothing to learn from this time-step (all pads)
+                        continue
 
                     loss = self.criterion(
                         output.reshape(-1, output.size(-1)), target_seq.reshape(-1)

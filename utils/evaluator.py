@@ -125,13 +125,16 @@ class Evaluator:
                     state = self.model.detach_state(state)
                     output, state = self.model(input_seq, state, context)
 
+                    # Skip if all targets are padding for this step
+                    pad_idx = self.vocab["<pad>"]
+                    num_valid_tokens = (target_seq.reshape(-1) != pad_idx).sum().item()
+                    if num_valid_tokens == 0:
+                        continue
+
                     loss = self.criterion(
                         output.reshape(-1, output.size(-1)), target_seq.reshape(-1)
                     )
                     perplexity = torch.exp(loss)
-
-                    pad_idx = self.vocab["<pad>"]
-                    num_valid_tokens = (target_seq.reshape(-1) != pad_idx).sum().item()
 
                     total_loss += loss.item() * num_valid_tokens
                     total_tokens += num_valid_tokens
