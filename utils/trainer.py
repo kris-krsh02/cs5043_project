@@ -60,17 +60,18 @@ class Trainer:
             total_loss = 0.0
             num_updates = 0
             
+            random.seed(epoch + 42)  # Ensure different shuffling each epoch
             random.shuffle(self.data)  # Shuffle data due to batch limit to ensure randomness
             
             for i in range(0, len(self.data), self.config.batch_size):
                 if max_batches is not None and i // self.config.batch_size >= max_batches:
                     break
                 
-                batch_seq = self.data[i : i + self.config.batch_size]
-                if len(batch_seq) < self.config.batch_size:
+                batch_docs = self.data[i : i + self.config.batch_size]
+                if len(batch_docs) < self.config.batch_size:
                     continue
                 
-                context_builders: List[ContextBuilder] = []
+                context_builders: List[ContextBuilder] = []                        
                 
                 if has_prompt:
                     context_builders = [
@@ -81,27 +82,30 @@ class Trainer:
                         )
                         for _ in range(self.config.batch_size)
                     ]
+                    
+                    # Build prompts in the beginning
+                    for i in range(self.config.batch_size):
+                        prompt = decode_tokens(batch_docs[i][0][:-1], self.vocab) # Use first sequence of each doc as prompt
+                        context_builders[i].build_prompt_embedding(prompt)
                         
                 state = self.model.init_state(self.config.batch_size)
-                num_steps = min(len(text) for text in batch_seq)
+                num_steps = max(len(text) for text in batch_docs) # based on longest article
                 
                 for t in range(num_steps):
-                    batch = torch.stack([text[t] for text in batch_seq]).to(self.device)
-                    input_seq = batch[:, :-1]
-                    target_seq = batch[:, 1:]
-
-                    if (
-                        input_seq.size(1) != self.config.sequence_length
-                        or target_seq.size(1) != self.config.sequence_length
-                    ):
-                        continue
+                    inputs, targets = [], []
                     
-                    if has_prompt and t == 0:
-                        for b in range(self.config.batch_size):
-                            prompt_tokens = batch[b, : -1]
-                            prompt_text = decode_tokens(prompt_tokens, self.vocab)
-                            context_builders[b].build_prompt_embedding(prompt_text)
-                
+                    # Handle differently sized documents
+                    for doc in batch_docs:
+                        if t < len(doc):
+                            inputs.append(doc[t][:-1]) 
+                            targets.append(doc[t][1:])  
+                        else:
+                            inputs.append(torch.full((self.config.sequence_length,), self.vocab["<pad>"], dtype=torch.long))
+                            targets.append(torch.full((self.config.sequence_length,), self.vocab["<pad>"], dtype=torch.long))
+                    
+                    input_seq = torch.stack(inputs).to(self.device)
+                    target_seq = torch.stack(targets).to(self.device)
+                    
                     if has_prompt:
                         prompt_batch = torch.stack(
                             [cb.get_prompt_embedding() for cb in context_builders]).to(self.device)
@@ -132,16 +136,15 @@ class Trainer:
                     self.optimizer.step()
                 
                     if has_history:
-                        predictions = get_predicted_tokens(output)
                         for b in range(self.config.batch_size):
-                            text = decode_tokens(predictions[b], self.vocab)
+                            text = decode_tokens(target_seq[b], self.vocab)
                             context_builders[b].update_historic_context(text)
 
                     self.logger.log(epoch, loss.item(), perplexity.item())
 
             epoch_avg_loss = total_loss / num_updates if num_updates > 0 else float("nan")
-
             epoch_perplexity = math.exp(epoch_avg_loss) if math.isfinite(epoch_avg_loss) else float("nan")
+            
             print('Total for epoch:')
             self.logger.log(epoch, epoch_avg_loss, epoch_perplexity)
 

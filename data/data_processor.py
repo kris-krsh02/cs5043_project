@@ -2,7 +2,6 @@ from typing import Optional, List
 import datasets
 import torchtext
 import torch
-from torch.nn.utils.rnn import pad_sequence
 
 
 class DataProcessor:

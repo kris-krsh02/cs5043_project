@@ -43,14 +43,21 @@ class Generator:
                 context_builder.build_prompt_embedding(prompt)
             state = self.model.init_state(1)
             
-            encoded_prompt = torch.tensor([self.vocab[token] for token in self.tokenizer(prompt)]).unsqueeze(0).to(self.model.device)
-            generated_tokens = encoded_prompt.clone()
+            generated_tokens = torch.tensor([self.vocab[token] for token in self.tokenizer(prompt)]).unsqueeze(0).to(self.model.device)
             history_buffer = []
             
             for _ in range(max_length):
-                input_seq = generated_tokens[:, -self.config.sequence_length :] # Get the last sequence_length tokens
-                context = None
                 
+                # Truncate if prompt too long and to support further iteration
+                if generated_tokens.size(1) > self.config.sequence_length: 
+                    input_seq = generated_tokens[:, -self.config.sequence_length :]
+                    
+                elif generated_tokens.size(1) < self.config.sequence_length:
+                    padding_length = self.config.sequence_length - generated_tokens.size(1)
+                    padding = torch.full((1, padding_length), self.vocab["<pad>"], dtype=torch.long).to(self.model.device)
+                    input_seq = torch.cat((padding, generated_tokens), dim=1)
+                    
+                context = None
                 if has_prompt:
                     prompt_embedding = context_builder.get_prompt_embedding().unsqueeze(0)
                     history_embedding = None
@@ -69,7 +76,7 @@ class Generator:
                 
                 if has_history:
                     history_buffer.append(next_token)
-                    if len(history_buffer) > self.config.sequence_length:
+                    if len(history_buffer) == self.config.sequence_length:
                         text = decode_tokens(history_buffer, self.vocab)
                         context_builder.update_historic_context(text)
                         history_buffer = []
