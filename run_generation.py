@@ -56,11 +56,11 @@ def run_generation(model_name: str, config: ExperimentConfig = ExperimentConfig(
     )
     
     # Generate text
-    prompts = ["The Earth is the third planet from the Sun in the Solar System and",
-               "Artificial intelligence is an important field of computer science",
-               "Spain is a country in southern Europe with a rich history and",
-               "Geometry is a field of mathematics that studies the relationships",
-               "Energy is a fundamental concept in physics that describes the ability"]
+    prompts = ["The Earth is the third planet from the Sun in the Solar System and is",
+               "Artificial intelligence is an important field of computer science that continues to grow rapidly",
+               "Spain is a country in southern Europe with a rich history and diverse cultural heritage",
+               "Geometry is a field of mathematics that studies the relationships between points and shapes",
+               "Energy is a fundamental concept in physics that describes the ability to perform work"]
     generations = []
     distinct2s =[]
     distinct3s = []

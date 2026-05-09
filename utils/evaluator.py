@@ -61,6 +61,7 @@ class Evaluator:
             for i in range(0, len(self.data), self.config.batch_size):
                 print(f"Evaluating batch {i // self.config.batch_size + 1}")
                 if max_batches is not None and i // self.config.batch_size >= max_batches:
+                    print(f"Reached max_batches limit of {max_batches}. Stopping evaluation.")
                     break
                 
                 batch_seq = self.data[i : i + self.config.batch_size]
